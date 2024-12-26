@@ -43,11 +43,7 @@ project/
      "browser": {
        "user_data_dir": "C:\\Users\\YourUser\\AppData\\Local\\Google\\Chrome\\User Data",
        "profile_directory": "Profile 3"
-     },
-     "cookies": {
-       "file": "assets/cookies.pkl"
-     },
-     "url": "https://www.aliexpress.us"
+     }
    }
    ```
    - **user_data_dir**: Path to your Chrome user profile.
