@@ -42,7 +42,7 @@ def init_driver(config):
 # - config_file: Path to the configuration file (default: "config.json").
 # Returns:
 # - A dictionary containing the configuration parameters.
-def load_config(config_file="config.json"):
+def load_config(config_file="assets/config.json"):
     with open(config_file, "r") as file:
         config = json.load(file)
     print("Configuration loaded successfully.")
@@ -195,7 +195,7 @@ def fetch_reviews(url, driver, names_and_emails, product_id):
     return reviews
 
 # Processes multiple URLs to fetch reviews and updates the CSV file after processing each URL.
-def process_urls(urls, driver, names_and_emails, output_file="output/reviews.csv", product_id):
+def process_urls(urls, driver, names_and_emails, output_file="output/reviews.csv", product_id=1):
     for url in urls:
         print(f"Processing URL: {url}")
         reviews = fetch_reviews(url, driver, names_and_emails, product_id)
