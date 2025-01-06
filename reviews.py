@@ -23,10 +23,15 @@ def init_driver(config):
     options.add_argument(f"--profile-directory={config['browser']['profile_directory']}")
 
     # Additional common arguments to improve stability
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-extensions")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-webgl")
+    options.add_argument("--disable-features=MediaCodec,OutOfBlinkCors")
+    options.add_argument("--log-level=3")  # Игнорировать незначительные ошибки
+    # options.add_argument("--headless")  # Опционально, если без GUI
 
     # Specify the path to the ChromeDriver executable
     service = Service("assets/chromedriver.exe")
@@ -83,8 +88,7 @@ def load_cookies(driver, url, cookie_file="assets/cookies.pkl"):
                     continue
                 driver.add_cookie(cookie)
             print("Cookies successfully loaded.")
-            time.sleep(3)  
-            driver.refresh()
+            #driver.refresh()
         except (EOFError, pickle.UnpicklingError):
             print("Error: Cookies file is corrupted. Please run 'cookies.py' to save cookies again.")
             driver.quit()
@@ -114,7 +118,7 @@ def generate_random_date():
 # Fetches reviews from the given product URL.
 # This function navigates to the URL, opens the reviews modal, scrolls to load all reviews,
 # and extracts the review content, rating, media, and user information.
-def fetch_reviews(url, driver, names_and_emails, product_id):
+def fetch_reviews(url, product_id, driver, names_and_emails):
     print(f"Opening page: {url}")
     driver.get(url)
 
@@ -134,7 +138,7 @@ def fetch_reviews(url, driver, names_and_emails, product_id):
                 time.sleep(2)
 
         print("Waiting for the modal window to load...")
-        modal_body = WebDriverWait(driver, 30).until(
+        modal_body = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "comet-v2-modal-body"))
         )
         time.sleep(2) 
@@ -173,7 +177,7 @@ def fetch_reviews(url, driver, names_and_emails, product_id):
                     continue
 
                 media_elements = element.find_elements(By.CSS_SELECTOR, "div[class^='list--itemThumbnail--'] img")
-                media_links = ", ".join([media.get_attribute("src") for media in media_elements]) or ""
+                media_link = media_elements[0].get_attribute("src") if media_elements else ""
 
                 user = random.choice(names_and_emails)
                 reviews.append({
@@ -184,7 +188,7 @@ def fetch_reviews(url, driver, names_and_emails, product_id):
                     "display_name": user["name"],
                     "email": user["email"],
                     "order_id": '',
-                    "media": media_links,
+                    "media": media_link,
                 })
             except Exception as e:
                 print(f"Error parsing review {idx + 1}: {e}")
@@ -195,10 +199,10 @@ def fetch_reviews(url, driver, names_and_emails, product_id):
     return reviews
 
 # Processes multiple URLs to fetch reviews and updates the CSV file after processing each URL.
-def process_urls(urls, driver, names_and_emails, output_file="output/reviews.csv", product_id=1):
+def process_urls(urls, product_id, driver, names_and_emails, output_file="output/reviews.csv"):
     for url in urls:
         print(f"Processing URL: {url}")
-        reviews = fetch_reviews(url, driver, names_and_emails, product_id)
+        reviews = fetch_reviews(url, product_id, driver, names_and_emails)
         if reviews:
             file_exists = os.path.isfile(output_file)
             pd.DataFrame(reviews).to_csv(
@@ -224,7 +228,7 @@ def main():
     load_cookies(driver, urls[0])
     try:
         names_and_emails = load_names_and_emails()
-        process_urls(urls, driver, names_and_emails, product_id)
+        process_urls(urls, product_id, driver, names_and_emails)
     finally:
         driver.quit()
         print("Script completed.")
