@@ -114,7 +114,7 @@ def generate_random_date():
 # Fetches reviews from the given product URL.
 # This function navigates to the URL, opens the reviews modal, scrolls to load all reviews,
 # and extracts the review content, rating, media, and user information.
-def fetch_reviews(url, driver, names_and_emails):
+def fetch_reviews(url, driver, names_and_emails, product_id):
     print(f"Opening page: {url}")
     driver.get(url)
 
@@ -169,6 +169,9 @@ def fetch_reviews(url, driver, names_and_emails):
                     continue
 
                 stars = len(element.find_elements(By.CSS_SELECTOR, "span.comet-icon-starreviewfilled"))
+                if stars < 3:
+                    continue
+
                 media_elements = element.find_elements(By.CSS_SELECTOR, "div[class^='list--itemThumbnail--'] img")
                 media_links = ", ".join([media.get_attribute("src") for media in media_elements]) or ""
 
@@ -177,7 +180,7 @@ def fetch_reviews(url, driver, names_and_emails):
                     "review_content": review_text,
                     "review_score": stars,
                     "date": generate_random_date(),
-                    "product_id": '',
+                    "product_id": product_id,
                     "display_name": user["name"],
                     "email": user["email"],
                     "order_id": '',
@@ -192,10 +195,10 @@ def fetch_reviews(url, driver, names_and_emails):
     return reviews
 
 # Processes multiple URLs to fetch reviews and updates the CSV file after processing each URL.
-def process_urls(urls, driver, names_and_emails, output_file="output/reviews.csv"):
+def process_urls(urls, driver, names_and_emails, output_file="output/reviews.csv", product_id):
     for url in urls:
         print(f"Processing URL: {url}")
-        reviews = fetch_reviews(url, driver, names_and_emails)
+        reviews = fetch_reviews(url, driver, names_and_emails, product_id)
         if reviews:
             file_exists = os.path.isfile(output_file)
             pd.DataFrame(reviews).to_csv(
@@ -211,6 +214,7 @@ def process_urls(urls, driver, names_and_emails, output_file="output/reviews.csv
 def main():
     config = load_config()
     urls = load_urls()
+    product_id = 124123 #Айди продукта для изменения
 
     if not urls:
         print("No URLs found. Please add URLs to 'urls.txt'.")
@@ -220,7 +224,7 @@ def main():
     load_cookies(driver, urls[0])
     try:
         names_and_emails = load_names_and_emails()
-        process_urls(urls, driver, names_and_emails)
+        process_urls(urls, driver, names_and_emails, product_id)
     finally:
         driver.quit()
         print("Script completed.")
